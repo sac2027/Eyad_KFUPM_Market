@@ -10,17 +10,33 @@ This file has three kinds of content. Each section is labelled:
 
 ---
 
-## 0. Open items and source discrepancies
+## 0. Decisions and remaining gaps
 
-Resolve these before Phase 1 relies on them.
+Resolved with the project owner on 17 Nov 2026:
 
-1. **Yellow RGB mismatch.** Guidelines list Yellow as `RGB 240-186-69` and `HEX F0BA4F`. F0BA4F is `240-186-79`. This file uses the **HEX** value (`#F0BA4F`), because it matches the SVG/brand palette.
-2. **Sand RGB mismatch.** Web palette lists Sand as `RGB 164-138-112`. Primary palette lists `RGB 170-140-109` with `HEX AA8C6D`, which matches. This file uses `#AA8C6D`.
-3. **Truncated hex values in the PDF.** White is printed as `FFFFF` and Black as `00000`. This file uses `#FFFFFF` and `#000000`, which match the RGB values.
-4. **KFUPM Display license.** The guidelines offer it as a download for brand use. Confirm the license allows **web embedding** before it ships in the app.
-5. **No vector logo supplied.** The package has `KFUPM-Seal.png` (4300×4300) and two matrix SVGs. There is no vector primary logo. See Section 5.
-6. **Pages not fully read.** Layout guidance for web, applications, and the seal (pp. 38–40) is incomplete in this document. Read these before Phase 1 if you want the official rules, not our derivations.
-7. **Official mark vs. app mark.** The brief asks for a custom "KFUPM Market" wordmark. The guidelines prohibit recreating or altering the KFUPM logo (p. 32). See Section 5.3 for the proposed approach.
+1. **Yellow** is `#F0BA4F`. The printed RGB (240-186-69) is a typo in the guidelines.
+2. **Sand** is `#AA8C6D`. `#A48A70` (the web palette's RGB) is allowed as an optional muted border, and is not used yet.
+3. **KFUPM Display** is embedded from the supplied files with `@font-face`. IBM Plex Sans Arabic is self-hosted from the supplied OFL files, so the app makes no third-party font requests.
+4. **App mark** is approved: KFUPM Display wordmark plus a FAST Matrix emblem. No octagon, tower or seal anywhere in the app. The footer states the app is student-built and not an official KFUPM service.
+5. **Proposed tokens** (spacing, radii, shadow) are approved.
+6. **College colors** may be used as small major or category accents. The app uses them only as an 8px dot beside a student's major.
+
+Still open:
+
+- Seal rules (pp. 38–40), the FAST Matrix allowed-combination page (p. 78) and the application layout pages were not read in full.
+- Truncated hex values in the PDF: White is printed `FFFFF`, Black `00000`. This file uses `#FFFFFF` and `#000000`.
+
+### Implementation notes (what the app adds on top of the brand values)
+
+| Token | Value | Why |
+|---|---|---|
+| Primary button | Turquoise fill, White text | White on Green is brand-approved but measures 3.6:1. White on Turquoise is 7.3:1. Green is kept for marks, progress and large elements. |
+| `--color-danger-ink` | `#A12F2F` | Error text. The brand Error `#DE5E5E` is 3.3:1 on white, too low for small text. It is still used for fills and borders. |
+| Button hover | `#0D4D53` (Turquoise), `#E9AD37` (Yellow) | One darker step for hover feedback. |
+| Muted text | Black at 62% | Secondary text on White and Beige, about 6:1. |
+| Yellow badges | Black text | Turquoise on Yellow is 4.1:1, so small badge text uses Black (brand-approved pair). |
+| Finals mode | Frame switches Beige → Turquoise, ink Turquoise → Beige | Both are approved pairs. The state is visible on every screen. |
+| Matrix tiles | Generated bars on a 5° skew in approved field/bar pairs | Placeholder art for listings without a photo. Hero, banners and empty states use the supplied matrix media. |
 
 ---
 
@@ -111,7 +127,7 @@ Check p. 54 before using a pair that is not in this table.
 | Surface (cards) | `--kfupm-white` | `#0E4F55` (a darker Turquoise step, see §1.9) |
 | Primary text | `--kfupm-turquoise` on Beige (AA), `--kfupm-black` on White | `--kfupm-beige` on Turquoise |
 | Secondary text | `--kfupm-turquoise` at reduced opacity | `--kfupm-beige` at reduced opacity |
-| Primary button | `--kfupm-green` background, White text | `--kfupm-green` background, White text |
+| Primary button | `--kfupm-turquoise` background, White text (see §0 notes) | not built |
 | Secondary button | Turquoise outline, Turquoise text | Beige outline, Beige text |
 | Highlight badge (e.g., "Free / لوجه الله") | `--kfupm-yellow` background, Turquoise text, large or bold only | same |
 | Hairline border | `--kfupm-gray` at 40% opacity | `--kfupm-beige` at 20% opacity |
