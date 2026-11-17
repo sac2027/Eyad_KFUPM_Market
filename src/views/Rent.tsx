@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import { ListingGrid } from '../components/listing/ListingCard'
 import { Button } from '../components/ui/Button'
@@ -8,7 +9,7 @@ import { useL, useT } from '../lib/i18n'
 import type { RateUnit } from '../lib/types'
 import { useStore } from '../store/useStore'
 import { useUi } from '../store/useUi'
-import { CategoryChips, EMPTY_FILTERS, EmptyState, FilterButton, FinalsBanner, type Filters, PageHeader, ResultCount, SearchInput, SortSelect, Toolbar, useFiltered } from './shared'
+import { CategoryChips, EMPTY_FILTERS, EmptyState, FilterButton, FinalsBanner, type Filters, PageHeader, ResultCount, SearchInput, Toolbar, useFiltered } from './shared'
 
 const UNITS: RateUnit[] = ['exam', 'hour', 'day', 'weekend', 'week']
 
@@ -46,14 +47,20 @@ export function Rent() {
       />
 
       {finals ? null : (
-        <ol className="mb-6 grid gap-3 sm:grid-cols-3">
-          {steps.map((s, i) => (
-            <li key={i} className="rounded-card bg-wash p-4">
-              <h2 className="!font-sans text-[15px] font-bold tracking-normal text-turquoise">{s.h}</h2>
-              <p className="mt-1 text-[14px] text-muted">{s.p}</p>
-            </li>
-          ))}
-        </ol>
+        <details className="group mb-5 rounded-card bg-wash">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-card px-4 text-[14.5px] font-semibold text-turquoise [&::-webkit-details-marker]:hidden">
+            {t('How renting works', 'كيف يشتغل الإيجار')}
+            <ChevronDown className="size-4 shrink-0 transition-transform duration-200 group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <ol className="grid gap-x-6 gap-y-3 px-4 pt-1 pb-4 sm:grid-cols-3">
+            {steps.map((s, i) => (
+              <li key={i}>
+                <h2 className="!font-sans text-[14.5px] font-bold tracking-normal text-turquoise">{s.h}</h2>
+                <p className="mt-0.5 text-[14px] text-muted">{s.p}</p>
+              </li>
+            ))}
+          </ol>
+        </details>
       )}
 
       <div className="mb-4 flex flex-col gap-3">
@@ -70,10 +77,9 @@ export function Rent() {
         >
           <SearchInput value={f.q} onChange={(v) => setF({ ...f, q: v })} placeholder={t('Search rentals', 'ابحث في الإيجار')} />
             <FilterButton f={f} set={setF} hideCondition />
-            <SortSelect value={f.sort} onChange={(sort) => setF({ ...f, sort })} />
         </Toolbar>
         <CategoryChips value={f.category} onChange={(category) => setF({ ...f, category })} />
-        <ResultCount n={shown.length} noun={t(shown.length === 1 ? 'rental' : 'rentals', 'إعلان إيجار')} />
+        <ResultCount n={shown.length} noun={t(shown.length === 1 ? 'rental' : 'rentals', 'إعلان إيجار')} sort={f.sort} onSort={(sort) => setF({ ...f, sort })} />
       </div>
 
       <ListingGrid

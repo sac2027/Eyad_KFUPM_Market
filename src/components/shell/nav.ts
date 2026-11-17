@@ -1,8 +1,8 @@
-import { Cpu, Gift, Handshake, type LucideIcon, Map, Megaphone, Store, Timer } from 'lucide-react'
+import { Cpu, Gift, Handshake, type LucideIcon, Map, Megaphone, ShieldCheck, Store, Timer } from 'lucide-react'
 import type { ViewId } from '../../lib/router'
 import type { Bi } from '../../lib/types'
 
-export const NAV: { id: ViewId; label: Bi; icon: LucideIcon; blurb: Bi }[] = [
+export const NAV: { id: ViewId; label: Bi; icon: LucideIcon; blurb: Bi; adminOnly?: boolean }[] = [
   { id: 'market', label: { en: 'Market', ar: 'السوق' }, icon: Store, blurb: { en: 'Buy, bundles and free items', ar: 'شراء وباقات وأغراض مجانية' } },
   { id: 'rent', label: { en: 'Rentals', ar: 'الإيجار' }, icon: Timer, blurb: { en: 'By the exam, hour, day or week', ar: 'بالاختبار أو الساعة أو اليوم أو الأسبوع' } },
   { id: 'requests', label: { en: 'Requests', ar: 'الطلبات' }, icon: Megaphone, blurb: { en: 'Urgent needs and bounties', ar: 'احتياجات عاجلة ومكافآت' } },
@@ -10,4 +10,10 @@ export const NAV: { id: ViewId; label: Bi; icon: LucideIcon; blurb: Bi }[] = [
   { id: 'skills', label: { en: 'Skill exchange', ar: 'تبادل المهارات' }, icon: Handshake, blurb: { en: 'Services and swaps', ar: 'خدمات ومقايضات' } },
   { id: 'passiton', label: { en: 'Pass-It-On box', ar: 'صندوق الخريجين' }, icon: Gift, blurb: { en: 'Free from graduating seniors', ar: 'مجانًا من الخريجين' } },
   { id: 'zones', label: { en: 'Meetup zones', ar: 'أماكن التسليم' }, icon: Map, blurb: { en: 'Where handovers happen', ar: 'وين يصير التسليم' } },
+  { id: 'admin', label: { en: 'Administration', ar: 'الإدارة' }, icon: ShieldCheck, blurb: { en: 'Reports, listings and students', ar: 'البلاغات والإعلانات والطلاب' }, adminOnly: true },
 ]
+
+/** Sections a persona can open. The admin page is listed for admins only. */
+export function navFor(isAdmin: boolean) {
+  return NAV.filter((n) => !n.adminOnly || isAdmin)
+}

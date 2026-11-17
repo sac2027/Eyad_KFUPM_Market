@@ -150,7 +150,7 @@ export function Toolbar({ left, children }: { left?: ReactNode; children: ReactN
 export function SearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
   const t = useT()
   return (
-    <div className="relative min-w-[150px] flex-1 basis-full sm:basis-0 lg:max-w-[340px]">
+    <div className="relative min-w-[150px] flex-1 lg:max-w-[340px]">
       <Search className="pointer-events-none absolute start-3 top-1/2 size-[18px] -translate-y-1/2 text-turquoise/70" aria-hidden="true" />
       <input type="search" className="field !ps-10 !pe-10" value={value} onChange={(e) => onChange(e.target.value)} placeholder={`${placeholder}…`} aria-label={placeholder} enterKeyHint="search" autoComplete="off" name="q" />
       {value ? (
@@ -185,10 +185,10 @@ export function SortSelect({ value, onChange }: { value: Sort; onChange: (v: Sor
   const t = useT()
   const finals = useStore((s) => s.finals)
   return (
-    <label className="relative inline-flex min-w-0 flex-1 items-center sm:flex-none">
+    <label className="relative inline-flex min-w-0 shrink-0 items-center">
       <span className="sr-only">{t('Sort by', 'الترتيب')}</span>
-      <ArrowDownUp className="pointer-events-none absolute start-3 size-4 text-turquoise" aria-hidden="true" />
-      <select className="field !ps-9 font-medium text-turquoise sm:!w-auto" value={finals ? 'near' : value} disabled={finals} onChange={(e) => onChange(e.target.value as Sort)}>
+      <ArrowDownUp className="pointer-events-none absolute start-2.5 size-4 text-turquoise" aria-hidden="true" />
+      <select className="field !min-h-9 !w-auto !border-transparent !py-1 !ps-8 text-[13.5px] font-semibold text-turquoise hover:!border-turquoise/40" value={finals ? 'near' : value} disabled={finals} onChange={(e) => onChange(e.target.value as Sort)}>
         <option value="new">{t('Newest', 'الأحدث')}</option>
         <option value="low">{t('Price: low to high', 'السعر: من الأقل')}</option>
         <option value="high">{t('Price: high to low', 'السعر: من الأعلى')}</option>
@@ -321,10 +321,13 @@ export function FilterButton({ f, set, hideCondition }: { f: Filters; set: (f: F
   )
 }
 
-export function ResultCount({ n, noun }: { n: number; noun: string }) {
+export function ResultCount({ n, noun, sort, onSort }: { n: number; noun: string; sort?: Sort; onSort?: (s: Sort) => void }) {
   return (
-    <p className="tabular text-[13.5px] text-muted" aria-live="polite">
-      {n} {noun}
-    </p>
+    <div className="flex items-center justify-between gap-3">
+      <p className="tabular text-[13.5px] text-muted" aria-live="polite">
+        {n} {noun}
+      </p>
+      {sort && onSort ? <SortSelect value={sort} onChange={onSort} /> : null}
+    </div>
   )
 }

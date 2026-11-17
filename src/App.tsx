@@ -1,16 +1,17 @@
 import { DirectionProvider } from '@base-ui/react/direction-provider'
-import { Briefcase, Ellipsis, Megaphone, Plus, Search, Store, Timer } from 'lucide-react'
+import { Briefcase, Ellipsis, Megaphone, Plus, Search, ShieldCheck, Store, Timer } from 'lucide-react'
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { Toaster } from 'sonner'
 import { Logo } from './components/brand/Logo'
 import { ListingDetail } from './components/listing/ListingDetail'
 import { FinalsToggle, LangToggle, PersonaMenu } from './components/shell/Controls'
-import { NAV } from './components/shell/nav'
+import { Notices } from './components/shell/Notices'
+import { navFor } from './components/shell/nav'
 import { Sheet } from './components/ui/Overlay'
 import { cn } from './lib/cn'
 import { useL, useLang, useT } from './lib/i18n'
 import { type ViewId, go, useRoute } from './lib/router'
-import { useStore } from './store/useStore'
+import { usePersona, useStore } from './store/useStore'
 import { useUi } from './store/useUi'
 import { Market } from './views/Market'
 
@@ -25,6 +26,9 @@ const Rent = lazy(() => import('./views/Rent').then((m) => ({ default: m.Rent })
 const Requests = lazy(() => import('./views/Requests').then((m) => ({ default: m.Requests })))
 const Skills = lazy(() => import('./views/Skills').then((m) => ({ default: m.Skills })))
 const Zones = lazy(() => import('./views/Zones').then((m) => ({ default: m.Zones })))
+const Admin = lazy(() => import('./views/admin/Admin').then((m) => ({ default: m.Admin })))
+const ProfileSheet = lazy(() => import('./components/trust/ProfileSheet').then((m) => ({ default: m.ProfileSheet })))
+const ReportDialog = lazy(() => import('./components/trust/ReportDialog').then((m) => ({ default: m.ReportDialog })))
 
 const VIEW: Record<ViewId, React.ComponentType> = {
   market: Market,
@@ -34,6 +38,7 @@ const VIEW: Record<ViewId, React.ComponentType> = {
   skills: Skills,
   passiton: PassItOn,
   zones: Zones,
+  admin: Admin,
 }
 
 function useActiveDeals(): number {
@@ -63,13 +68,14 @@ function DealsButton({ compact }: { compact?: boolean }) {
 function Sidebar({ view }: { view: ViewId }) {
   const L = useL()
   const t = useT()
+  const isAdmin = usePersona().role === 'admin'
   return (
     <aside className="on-frame hidden w-[244px] shrink-0 flex-col px-3 pt-4 pb-3 lg:flex">
       <a href="#/market" className="mb-5 rounded-control px-2 py-1" aria-label={t('KFUPM Market home', 'الصفحة الرئيسية لسوق البترول')}>
         <Logo />
       </a>
       <nav aria-label={t('Sections', 'الأقسام')} className="flex flex-col gap-0.5">
-        {NAV.map((n) => {
+        {navFor(isAdmin).map((n) => {
           const on = n.id === view
           return (
             <a
@@ -97,6 +103,7 @@ function Sidebar({ view }: { view: ViewId }) {
 
 function TopBar() {
   const t = useT()
+  const isAdmin = usePersona().role === 'admin'
   const setCommand = useUi((s) => s.setCommand)
   const openStudio = useUi((s) => s.openStudio)
   return (
@@ -124,22 +131,28 @@ function TopBar() {
         <span className="md:hidden">
           <FinalsToggle compact />
         </span>
-        <span className="hidden sm:inline-flex">
-          <DealsButton />
-        </span>
-        <span className="sm:hidden">
-          <DealsButton compact />
-        </span>
+        {isAdmin ? null : (
+          <>
+            <span className="hidden sm:inline-flex">
+              <DealsButton />
+            </span>
+            <span className="sm:hidden">
+              <DealsButton compact />
+            </span>
+          </>
+        )}
         <LangToggle />
         <PersonaMenu />
-        <button
-          type="button"
-          onClick={() => openStudio('sale')}
-          className="press ms-1 hidden min-h-11 items-center gap-2 rounded-control bg-frame-ink px-4 text-[14.5px] font-semibold text-frame lg:inline-flex"
-        >
-          <Plus className="size-[18px]" aria-hidden="true" />
-          {t('List something', 'اعرض غرضك')}
-        </button>
+        {isAdmin ? null : (
+          <button
+            type="button"
+            onClick={() => openStudio('sale')}
+            className="press ms-1 hidden min-h-11 items-center gap-2 rounded-control bg-frame-ink px-4 text-[14.5px] font-semibold text-frame lg:inline-flex"
+          >
+            <Plus className="size-[18px]" aria-hidden="true" />
+            {t('List something', 'اعرض غرضك')}
+          </button>
+        )}
       </div>
     </header>
   )
@@ -150,12 +163,13 @@ function MobileNav({ view }: { view: ViewId }) {
   const L = useL()
   const openStudio = useUi((s) => s.openStudio)
   const [more, setMore] = useState(false)
+  const isAdmin = usePersona().role === 'admin'
   const main: { id: ViewId; icon: typeof Store; label: string }[] = [
     { id: 'market', icon: Store, label: t('Market', 'السوق') },
     { id: 'rent', icon: Timer, label: t('Rentals', 'الإيجار') },
   ]
   const item = 'press flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11.5px] font-medium'
-  const moreOn = !['market', 'rent', 'requests'].includes(view)
+  const moreOn = !['market', 'rent', 'requests', ...(isAdmin ? ['admin'] : [])].includes(view)
   return (
     <>
       <nav aria-label={t('Sections', 'الأقسام')} className="on-frame fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-frame-ink/15 bg-frame pb-[env(safe-area-inset-bottom)] lg:hidden">
@@ -165,11 +179,18 @@ function MobileNav({ view }: { view: ViewId }) {
             {m.label}
           </a>
         ))}
-        <button type="button" onClick={() => openStudio('sale')} className={cn(item, 'text-frame-ink')} aria-label={t('List something', 'اعرض غرضك')}>
-          <span className="inline-grid size-10 place-items-center rounded-full bg-frame-ink text-frame">
-            <Plus className="size-5" aria-hidden="true" />
-          </span>
-        </button>
+        {isAdmin ? (
+          <a href="#/admin" aria-current={view === 'admin' ? 'page' : undefined} className={cn(item, 'text-frame-ink', view === 'admin' ? 'font-bold' : 'opacity-75')}>
+            <ShieldCheck className="size-5" aria-hidden="true" />
+            {t('Admin', 'الإدارة')}
+          </a>
+        ) : (
+          <button type="button" onClick={() => openStudio('sale')} className={cn(item, 'text-frame-ink')} aria-label={t('List something', 'اعرض غرضك')}>
+            <span className="inline-grid size-10 place-items-center rounded-full bg-frame-ink text-frame">
+              <Plus className="size-5" aria-hidden="true" />
+            </span>
+          </button>
+        )}
         <a href="#/requests" aria-current={view === 'requests' ? 'page' : undefined} className={cn(item, 'text-frame-ink', view === 'requests' ? 'font-bold' : 'opacity-75')}>
           <Megaphone className="size-5" aria-hidden="true" />
           {t('Requests', 'الطلبات')}
@@ -181,7 +202,7 @@ function MobileNav({ view }: { view: ViewId }) {
       </nav>
       <Sheet open={more} onOpenChange={setMore} title={t('All sections', 'كل الأقسام')}>
         <ul className="p-3">
-          {NAV.map((n) => (
+          {navFor(isAdmin).map((n) => (
             <li key={n.id}>
               <button
                 type="button"
@@ -216,8 +237,10 @@ function Overlays() {
   const offer = useUi((s) => s.offerFor != null)
   const verify = useUi((s) => s.verify)
   const command = useUi((s) => s.command)
-  const [seen, setSeen] = useState({ studio: false, deals: false, offer: false, verify: false, command: false })
-  const next = { studio: seen.studio || studio, deals: seen.deals || deals, offer: seen.offer || offer, verify: seen.verify || verify, command: seen.command || command }
+  const profile = useUi((s) => s.profileId != null)
+  const report = useUi((s) => s.reportTarget != null)
+  const [seen, setSeen] = useState({ studio: false, deals: false, offer: false, verify: false, command: false, profile: false, report: false })
+  const next = { studio: seen.studio || studio, deals: seen.deals || deals, offer: seen.offer || offer, verify: seen.verify || verify, command: seen.command || command, profile: seen.profile || profile, report: seen.report || report }
   if (Object.keys(next).some((k) => next[k as keyof typeof next] !== seen[k as keyof typeof seen])) setSeen(next)
   return (
     <>
@@ -226,6 +249,8 @@ function Overlays() {
       {next.offer ? <OfferDrawer /> : null}
       {next.verify ? <VerifyModal /> : null}
       {next.command ? <CommandMenu /> : null}
+      {next.profile ? <ProfileSheet /> : null}
+      {next.report ? <ReportDialog /> : null}
     </>
   )
 }
@@ -287,6 +312,7 @@ export default function App() {
             className="scroll-thin min-h-0 flex-1 overflow-y-auto bg-sheet outline-none max-lg:pb-[calc(56px+env(safe-area-inset-bottom))] lg:me-2 lg:mb-2 lg:rounded-sheet"
           >
             <div key={route.view} className="mx-auto w-full max-w-[1400px] px-4 pt-5 pb-10 sm:px-6 lg:px-8 lg:pt-7">
+              {route.view === 'admin' ? null : <Notices />}
               <Suspense fallback={null}>
                 <View />
               </Suspense>

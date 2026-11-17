@@ -1,4 +1,4 @@
-import { AlarmClock, CalendarClock, MessageCircle, PackageCheck, Undo2 } from 'lucide-react'
+import { AlarmClock, CalendarClock, MessageCircle, PackageCheck, ThumbsUp, Undo2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { PAYMENTS } from '../../data/categories'
@@ -73,6 +73,7 @@ function DealCard({ deal, listing }: { deal: Deal; listing: Listing | undefined 
   const confirmHandover = useStore((s) => s.confirmHandover)
   const markReturned = useStore((s) => s.markReturned)
   const cancelDeal = useStore((s) => s.cancelDeal)
+  const endorse = useStore((s) => s.endorse)
   const setDeals = useUi((s) => s.setDeals)
   const active = deal.status === 'reserved' || deal.status === 'rented'
   const title = listing ? L(listing.title) : t('Removed listing', 'إعلان محذوف')
@@ -116,6 +117,30 @@ function DealCard({ deal, listing }: { deal: Deal; listing: Listing | undefined 
       </dl>
 
       {deal.status === 'rented' ? <Countdown deal={deal} lateFee={listing?.rent?.lateFeePerHour ?? 0} /> : null}
+
+      {deal.status === 'completed' && !iAmSeller && other ? (
+        <div className="mt-3">
+          {deal.endorsed ? (
+            <p className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-turquoise">
+              <ThumbsUp className="size-4 fill-green text-green" aria-hidden="true" />
+              {t(`You endorsed ${L(other.name).split(' ')[0]}`, `زكّيت ${L(other.name).split(' ')[0]}`)}
+            </p>
+          ) : (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="!min-h-11"
+              onClick={() => {
+                endorse(deal.id)
+                toast.success(t('Endorsement added', 'تمت التزكية'), { description: t('It counts on their profile for other students to see.', 'تنحسب في ملفه ويشوفها باقي الطلاب.') })
+              }}
+            >
+              <ThumbsUp className="size-4" aria-hidden="true" />
+              {t(`Endorse ${L(other.name).split(' ')[0]}`, `زكِّ ${L(other.name).split(' ')[0]}`)}
+            </Button>
+          )}
+        </div>
+      ) : null}
 
       {active ? (
         <div className="mt-3 flex flex-wrap gap-2">

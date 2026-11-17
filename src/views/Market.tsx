@@ -1,4 +1,4 @@
-import { ArrowRight, Pause, Play, Plus } from 'lucide-react'
+import { ArrowRight, Pause, Play, Plus, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { ListingGrid } from '../components/listing/ListingCard'
 import { Button } from '../components/ui/Button'
@@ -7,15 +7,19 @@ import { useDebounced, useListings, useNow } from '../lib/hooks'
 import { useT } from '../lib/i18n'
 import { useStore } from '../store/useStore'
 import { useUi } from '../store/useUi'
-import { CategoryChips, EMPTY_FILTERS, EmptyState, FilterButton, FinalsBanner, type Filters, PageHeader, ResultCount, SearchInput, SortSelect, Toolbar, useFiltered } from './shared'
+import { CategoryChips, EMPTY_FILTERS, EmptyState, FilterButton, FinalsBanner, type Filters, PageHeader, ResultCount, SearchInput, Toolbar, useFiltered } from './shared'
 
 type Tab = 'all' | 'sale' | 'bundle' | 'free' | 'saved'
+
+// A stable empty list: a selector that returned a new [] each time made React re-render forever.
+const NO_FAVORITES: string[] = []
 
 function Hero() {
   const t = useT()
   const openStudio = useUi((s) => s.openStudio)
   const video = useRef<HTMLVideoElement>(null)
   const [paused, setPaused] = useState(false)
+  const setHideHero = useStore((s) => s.setHideHero)
   return (
     <section className="relative mb-6 overflow-hidden rounded-card bg-turquoise text-white" aria-label={t('Welcome', 'مرحبًا')}>
       <video
@@ -47,7 +51,15 @@ function Hero() {
       >
         {paused ? <Play className="size-4" aria-hidden="true" /> : <Pause className="size-4" aria-hidden="true" />}
       </button>
-      <div className="relative max-w-[560px] px-5 py-7 sm:px-8 sm:py-9">
+      <button
+        type="button"
+        onClick={() => setHideHero(true)}
+        aria-label={t('Close welcome banner', 'أغلق بانر الترحيب')}
+        className="press absolute end-2 top-2 z-10 inline-grid size-11 place-items-center rounded-full text-white/85 hover:bg-white/15 hover:text-white"
+      >
+        <X className="size-[18px]" aria-hidden="true" />
+      </button>
+      <div className="relative max-w-[560px] py-7 ps-5 pe-12 sm:px-8 sm:py-9">
         <h1 className="text-[26px] font-black text-white sm:text-[32px]">{t('Need it on campus? A student has it.', 'تحتاجه في الجامعة؟ عند طالب مثلك.')}</h1>
         <p className="mt-2 max-w-[46ch] text-[15.5px] text-beige">
           {t(
@@ -75,7 +87,8 @@ export function Market() {
   const now = useNow()
   const all = useListings()
   const finals = useStore((s) => s.finals)
-  const favorites = useStore((s) => s.favorites[s.personaId] ?? [])
+  const hideHero = useStore((s) => s.hideHero)
+  const favorites = useStore((s) => s.favorites[s.personaId]) ?? NO_FAVORITES
   const openStudio = useUi((s) => s.openStudio)
   const [tab, setTab] = useState<Tab>('all')
   const [f, setF] = useState<Filters>(EMPTY_FILTERS)
@@ -91,8 +104,21 @@ export function Market() {
 
   return (
     <>
-      {finals ? <FinalsBanner count={shown.length} noun={t('items', 'غرض')} /> : <Hero />}
-      {finals ? <PageHeader title={t('Market', 'السوق')} lead={t('Calculators, notes and chargers you can get before the exam starts.', 'حاسبات ومذكرات وشواحن تلحق عليها قبل يبدأ الاختبار.')} /> : null}
+      {finals ? <FinalsBanner count={shown.length} noun={t('items', 'غرض')} /> : hideHero ? null : <Hero />}
+      {finals || hideHero ? (
+        <PageHeader
+          title={t('Market', 'السوق')}
+          lead={finals ? t('Calculators, notes and chargers you can get before the exam starts.', 'حاسبات ومذكرات وشواحن تلحق عليها قبل يبدأ الاختبار.') : t('What students in the dorms and up the hill are selling and giving away today.', 'اللي يبيعونه ويتبرعون به طلاب السكن والجبل اليوم.')}
+          action={
+            finals ? undefined : (
+              <Button onClick={() => openStudio('sale')} className="lg:hidden">
+                <Plus className="size-[18px]" aria-hidden="true" />
+                {t('List something', 'اعرض غرضك')}
+              </Button>
+            )
+          }
+        />
+      ) : null}
 
       <div className="mb-4 flex flex-col gap-3">
         <Toolbar
@@ -113,10 +139,9 @@ export function Market() {
         >
           <SearchInput value={f.q} onChange={(v) => setF({ ...f, q: v })} placeholder={t('Search this list', 'ابحث في القائمة')} />
             <FilterButton f={f} set={setF} />
-            <SortSelect value={f.sort} onChange={(sort) => setF({ ...f, sort })} />
         </Toolbar>
         <CategoryChips value={f.category} onChange={(category) => setF({ ...f, category })} only={['academic', 'hardware', 'dorm', 'mobility', 'gaming', 'sports', 'camping']} />
-        <ResultCount n={shown.length} noun={t(shown.length === 1 ? 'listing' : 'listings', 'إعلان')} />
+        <ResultCount n={shown.length} noun={t(shown.length === 1 ? 'listing' : 'listings', 'إعلان')} sort={f.sort} onSort={(sort) => setF({ ...f, sort })} />
       </div>
 
       <ListingGrid

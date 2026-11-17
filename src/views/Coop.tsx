@@ -7,7 +7,7 @@ import { useDebounced, useListings, useNow } from '../lib/hooks'
 import { useT } from '../lib/i18n'
 import type { Kind } from '../lib/types'
 import { useUi } from '../store/useUi'
-import { EMPTY_FILTERS, EmptyState, type Filters, PageHeader, ResultCount, SearchInput, SortSelect, Toolbar, useFiltered } from './shared'
+import { EMPTY_FILTERS, EmptyState, type Filters, PageHeader, ResultCount, SearchInput, Toolbar, useFiltered } from './shared'
 
 type Tab = 'parts' | 'groupbuy'
 const TAGS = ['ESP32', 'STM32', 'FPGA', 'Arduino', 'SPI', 'I2C', 'LiPo', 'NEMA']
@@ -54,7 +54,6 @@ export function Coop() {
           }
         >
           <SearchInput value={f.q} onChange={(v) => setF({ ...f, q: v })} placeholder={t('Chip, pinout or spec', 'شريحة أو واجهة أو مواصفة')} />
-            <SortSelect value={f.sort} onChange={(sort) => setF({ ...f, sort })} />
         </Toolbar>
         <div className="no-scrollbar flex gap-1.5 overflow-x-auto sm:flex-wrap" role="group" aria-label={t('Quick spec search', 'بحث سريع بالمواصفة')}>
           {tab === 'parts'
@@ -77,7 +76,7 @@ export function Coop() {
             </Chip>
           ))}
         </div>
-        <ResultCount n={shown.length} noun={tab === 'groupbuy' ? t(shown.length === 1 ? 'group buy' : 'group buys', 'طلبية') : t(shown.length === 1 ? 'part' : 'parts', 'قطعة')} />
+        <ResultCount n={shown.length} noun={tab === 'groupbuy' ? t(shown.length === 1 ? 'group buy' : 'group buys', 'طلبية') : t(shown.length === 1 ? 'part' : 'parts', 'قطعة')} sort={f.sort} onSort={(sort) => setF({ ...f, sort })} />
       </div>
 
       <ListingGrid

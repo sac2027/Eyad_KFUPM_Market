@@ -103,8 +103,8 @@ export function InstantBadge() {
   return (
     <Badge tone="yellow">
       <Zap className="size-3.5" aria-hidden="true" />
-      <span className="xs:hidden">{t('15 min', '15 د')}</span>
-      <span className="hidden xs:inline">{t('15 min pickup', 'استلام خلال 15 د')}</span>
+      <span className="sm:hidden">{t('Ready now', 'جاهز الحين')}</span>
+      <span className="hidden sm:inline">{t('Ready in 15 min', 'جاهز خلال 15 د')}</span>
     </Badge>
   )
 }

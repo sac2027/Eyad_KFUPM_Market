@@ -78,6 +78,8 @@ export interface Listing {
   icon: string
   tone: Tone
   photo?: string
+  /** Taken down by an admin. Only the seller and admins still see it. */
+  hidden?: boolean
 }
 
 export type Urgency = 'emergency' | 'week' | 'flexible'
@@ -123,6 +125,8 @@ export interface Deal {
   payment: Payment
   status: DealStatus
   createdAt: number
+  /** The buyer endorsed the seller after the deal completed. */
+  endorsed?: boolean
 }
 
 export interface User {
@@ -134,7 +138,41 @@ export interface User {
   home: ZoneId
   verified: boolean
   graduating?: boolean
+  role?: 'admin'
+  /** Suspended by an admin: cannot list or reserve, and their listings are hidden. */
+  suspended?: boolean
   whatsapp: string
   joined: number
   stats: { responseMins: number; deals: number; onTime: number; rentals: number; endorsements: number }
+}
+
+export type ReportReason = 'scam' | 'prohibited' | 'wrongInfo' | 'noShow' | 'abuse' | 'other'
+
+export interface Report {
+  id: string
+  targetType: 'listing' | 'request' | 'user'
+  targetId: string
+  reason: ReportReason
+  note: string
+  reporterId: string
+  createdAt: number
+  status: 'open' | 'dismissed' | 'actioned'
+  /** What the admin did, in plain words. */
+  resolution?: Bi
+  resolvedAt?: number
+}
+
+export interface Announcement {
+  id: string
+  text: Bi
+  tone: 'info' | 'warning'
+  createdAt: number
+}
+
+export interface AuditEntry {
+  id: string
+  at: number
+  adminId: string
+  action: Bi
+  target: string
 }

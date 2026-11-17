@@ -11,7 +11,7 @@ import { go, openListing } from '../../lib/router'
 import { useStore } from '../../store/useStore'
 import { useUi } from '../../store/useUi'
 import { NamedIcon } from '../ui/Icon'
-import { NAV } from './nav'
+import { navFor } from './nav'
 
 /** Ctrl/Cmd+K. Opened from the keyboard, so it appears without animation. */
 export function CommandMenu() {
@@ -25,6 +25,7 @@ export function CommandMenu() {
   const listings = useListings()
   const requests = useRequests()
   const users = useStore((s) => s.users)
+  const isAdmin = useStore((s) => s.users.find((u) => u.id === s.personaId)?.role === 'admin')
   const setLang = useStore((s) => s.setLang)
   const setPersona = useStore((s) => s.setPersona)
   const finals = useStore((s) => s.finals)
@@ -41,7 +42,16 @@ export function CommandMenu() {
         <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/40" />
         <Dialog.Popup className="fixed inset-x-3 top-[8dvh] z-50 mx-auto max-w-[620px] overflow-hidden rounded-sheet bg-white shadow-float outline-none">
           <Dialog.Title className="sr-only">{t('Search and commands', 'البحث والأوامر')}</Dialog.Title>
-          <Command label={t('Search and commands', 'البحث والأوامر')} loop>
+          <Command
+            label={t('Search and commands', 'البحث والأوامر')}
+            loop
+            // Every typed word must appear in the item. The default fuzzy match
+            // returned "Desk lamp" for "casio" because the letters appear in order.
+            filter={(value, search, keywords) => {
+              const hay = `${value} ${keywords?.join(' ') ?? ''}`.toLowerCase()
+              return search.toLowerCase().split(/\s+/).filter(Boolean).every((w) => hay.includes(w)) ? 1 : 0
+            }}
+          >
             <div className="flex items-center gap-3 border-b border-line px-4">
               <Search className="size-5 shrink-0 text-turquoise" aria-hidden="true" />
               <Command.Input autoFocus placeholder={t('Search items, courses, sections or actions', 'ابحث عن غرض أو مادة أو قسم أو أمر')} className="h-14 min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-black/60" />
@@ -74,7 +84,7 @@ export function CommandMenu() {
               </Command.Group>
 
               <Command.Group heading={t('Sections', 'الأقسام')}>
-                {NAV.map((n) => (
+                {navFor(isAdmin).map((n) => (
                   <Command.Item key={n.id} value={`section ${n.label.en} ${n.label.ar}`} onSelect={run(() => go(n.id))}>
                     <n.icon className="size-4 text-turquoise" aria-hidden="true" />
                     <span>{L(n.label)}</span>

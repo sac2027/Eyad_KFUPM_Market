@@ -36,11 +36,22 @@ static host as is.
 | Pass-It-On box | Free items from graduating seniors |
 | Meetup zones | Schematic campus map with listings per zone and estimated walking time |
 | Quick List | One form for all seven post types, with presets and a price range suggestion |
-| My deals | Reservations, handover steps, live rental return countdowns, late fees |
+| My deals | Reservations, handover steps, live rental return countdowns, late fees, endorsing a seller after a completed deal |
+| Administration | Reports queue, listing takedowns, student verification and suspension, overdue rentals, a campus-wide announcement and an activity log |
 
 Also: instant English/Arabic switch (`Alt+L`), command palette (`Ctrl+K`), Finals mode,
 demo personas, a simulated `@kfupm.edu.sa` verification (demo code `590059`), pre-filled WhatsApp
 messages, and "Reset demo data" in the persona menu.
+
+## Trust and moderation
+
+- Students can report a listing, a request or another student. They can also ask the seller a question
+  on WhatsApp before reserving, and open a seller's profile to see what else they have listed.
+- The admin page is at `#/admin`. Access is simulated: pick **Market Admin** in the persona menu.
+  There is no real login, so this is a preview of the workflow, not access control.
+- Hiding a listing or suspending a student takes effect for every other persona straight away.
+  The seller still sees a hidden listing, with a notice. Suspended students can browse but cannot list or reserve.
+- Every admin action is written to the activity log.
 
 ## Notes for developers
 

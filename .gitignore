@@ -25,3 +25,4 @@ dist-ssr
 
 .taste-skill
 graphify-out/cache
+src/graphify-out

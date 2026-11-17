@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
-export type ViewId = 'market' | 'rent' | 'requests' | 'coop' | 'skills' | 'passiton' | 'zones'
-export const VIEWS: ViewId[] = ['market', 'rent', 'requests', 'coop', 'skills', 'passiton', 'zones']
+export type ViewId = 'market' | 'rent' | 'requests' | 'coop' | 'skills' | 'passiton' | 'zones' | 'admin'
+export const VIEWS: ViewId[] = ['market', 'rent', 'requests', 'coop', 'skills', 'passiton', 'zones', 'admin']
 
 export interface Route {
   view: ViewId

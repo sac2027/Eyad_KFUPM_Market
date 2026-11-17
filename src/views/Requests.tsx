@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Clock, HandHelping, MapPin, MessageCircle, Plus } from 'lucide-react'
+import { Check, ChevronDown, Clock, Flag, HandHelping, MapPin, MessageCircle, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Avatar } from '../components/listing/SellerCard'
@@ -69,6 +69,7 @@ function RequestCard({ r, now, index }: { r: IsoRequest; now: number; index: num
   const me = usePersona()
   const requester = useUser(r.requesterId)
   const setOfferFor = useUi((s) => s.setOfferFor)
+  const setReportTarget = useUi((s) => s.setReportTarget)
   const fulfil = useStore((s) => s.fulfilRequest)
   const [open, setOpen] = useState(false)
   const mine = r.requesterId === me.id
@@ -145,6 +146,11 @@ function RequestCard({ r, now, index }: { r: IsoRequest; now: number; index: num
           </button>
         ) : r.status === 'open' ? (
           <span className="text-[13.5px] text-muted">{mine ? t('No offers yet. Students nearby have been pinged.', 'ما فيه عروض للحين. نبّهنا الطلاب القريبين.') : t('No offers yet. Be the first.', 'ما فيه عروض. كن أول واحد.')}</span>
+        ) : null}
+        {!mine && r.status === 'open' && !r.id.startsWith('worst-') ? (
+          <button type="button" onClick={() => setReportTarget({ type: 'request', id: r.id })} aria-label={t('Report this request', 'بلّغ عن الطلب')} title={t('Report this request', 'بلّغ عن الطلب')} className="press ms-auto inline-grid size-11 place-items-center rounded-control text-muted hover:bg-black/5 hover:text-turquoise">
+            <Flag className="size-4" aria-hidden="true" />
+          </button>
         ) : null}
       </div>
 

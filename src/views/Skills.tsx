@@ -6,7 +6,7 @@ import { Chip } from '../components/ui/Segmented'
 import { useDebounced, useListings, useNow } from '../lib/hooks'
 import { useT } from '../lib/i18n'
 import { useUi } from '../store/useUi'
-import { EMPTY_FILTERS, EmptyState, type Filters, PageHeader, ResultCount, SearchInput, SortSelect, Toolbar, useFiltered } from './shared'
+import { EMPTY_FILTERS, EmptyState, type Filters, PageHeader, ResultCount, SearchInput, Toolbar, useFiltered } from './shared'
 
 export function Skills() {
   const t = useT()
@@ -40,9 +40,8 @@ export function Skills() {
           }
         >
           <SearchInput value={f.q} onChange={(v) => setF({ ...f, q: v })} placeholder={t('Search skills', 'ابحث في المهارات')} />
-            <SortSelect value={f.sort} onChange={(sort) => setF({ ...f, sort })} />
         </Toolbar>
-        <ResultCount n={shown.length} noun={t(shown.length === 1 ? 'service' : 'services', 'خدمة')} />
+        <ResultCount n={shown.length} noun={t(shown.length === 1 ? 'service' : 'services', 'خدمة')} sort={f.sort} onSort={(sort) => setF({ ...f, sort })} />
       </div>
       <ListingGrid
         heading={t('Services', 'الخدمات')}

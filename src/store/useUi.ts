@@ -9,6 +9,8 @@ interface Ui {
   command: boolean
   verify: boolean
   offerFor: string | null
+  profileId: string | null
+  reportTarget: { type: 'listing' | 'request' | 'user'; id: string } | null
   /** What to do once the persona is verified. */
   afterVerify: (() => void) | null
   openStudio: (mode?: StudioMode) => void
@@ -17,6 +19,8 @@ interface Ui {
   setCommand: (open: boolean) => void
   setVerify: (open: boolean, after?: () => void) => void
   setOfferFor: (id: string | null) => void
+  setProfile: (id: string | null) => void
+  setReportTarget: (t: Ui['reportTarget']) => void
 }
 
 export const useUi = create<Ui>((set) => ({
@@ -25,6 +29,8 @@ export const useUi = create<Ui>((set) => ({
   command: false,
   verify: false,
   offerFor: null,
+  profileId: null,
+  reportTarget: null,
   afterVerify: null,
   openStudio: (mode = 'sale') => set({ studio: { open: true, mode } }),
   closeStudio: () => set((s) => ({ studio: { ...s.studio, open: false } })),
@@ -32,4 +38,6 @@ export const useUi = create<Ui>((set) => ({
   setCommand: (command) => set({ command }),
   setVerify: (verify, after) => set({ verify, afterVerify: verify ? (after ?? null) : null }),
   setOfferFor: (offerFor) => set({ offerFor }),
+  setProfile: (profileId) => set({ profileId }),
+  setReportTarget: (reportTarget) => set({ reportTarget }),
 }))

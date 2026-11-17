@@ -1,4 +1,4 @@
-import type { Deal, IsoRequest, Listing, Tone } from '../lib/types'
+import type { Announcement, AuditEntry, Deal, IsoRequest, Listing, Report, Tone } from '../lib/types'
 
 const MIN = 60_000
 const HOUR = 3_600_000
@@ -970,4 +970,43 @@ export function seedDeals(now: number): Deal[] {
       createdAt: now - 4 * DAY,
     },
   ]
+}
+
+export function seedReports(now: number): Report[] {
+  return [
+    { id: 'rep-rig', targetType: 'listing', targetId: 'rtx-rig', reason: 'wrongInfo', note: 'Listed as an RTX 4080 Super but the photo he sent me on WhatsApp shows a 4070.', reporterId: 'yousef', createdAt: now - 3 * HOUR, status: 'open' },
+    { id: 'rep-scooter', targetType: 'listing', targetId: 'mi-scooter', reason: 'prohibited', note: 'Are e-scooters still allowed inside the academic area? Housing sent an email about it.', reporterId: 'khalid', createdAt: now - 9 * HOUR, status: 'open' },
+    { id: 'rep-majed', targetType: 'user', targetId: 'majed', reason: 'noShow', note: 'Agreed to meet at the parking twice and did not come either time.', reporterId: 'turki', createdAt: now - 26 * HOUR, status: 'open' },
+    {
+      id: 'rep-old',
+      targetType: 'request',
+      targetId: 'iso-khobar',
+      reason: 'other',
+      note: 'Is asking for rides allowed here?',
+      reporterId: 'rayan',
+      createdAt: now - 4 * DAY,
+      status: 'dismissed',
+      resolution: { en: 'Dismissed. Ride and pickup favors are allowed.', ar: 'تم الرفض. المشاوير والفزعات مسموحة.' },
+      resolvedAt: now - 4 * DAY + 2 * HOUR,
+    },
+  ]
+}
+
+export function seedAudit(now: number): AuditEntry[] {
+  return [
+    { id: 'au-2', at: now - 4 * DAY + 2 * HOUR, adminId: 'admin', action: { en: 'Dismissed a report', ar: 'رفض بلاغ' }, target: 'Anyone driving to Khobar or Dammam this week?' },
+    { id: 'au-1', at: now - 6 * DAY, adminId: 'admin', action: { en: 'Published an announcement', ar: 'نشر إعلان' }, target: 'Pass-It-On box' },
+  ]
+}
+
+export function seedAnnouncement(now: number): Announcement {
+  return {
+    id: 'ann-1',
+    tone: 'info',
+    text: {
+      en: 'Graduating this term? Drop what you cannot take home in the Pass-It-On box before you hand in your room key.',
+      ar: 'متخرج هذا الترم؟ حط الأغراض اللي ما تقدر تشيلها في صندوق الخريجين قبل ما تسلّم مفتاح الغرفة.',
+    },
+    createdAt: now - 6 * DAY,
+  }
 }

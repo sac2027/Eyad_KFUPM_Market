@@ -1,10 +1,11 @@
 import { Menu } from '@base-ui/react/menu'
-import { BadgeCheck, Check, ChevronDown, FlaskConical, Languages, RotateCcw, ShieldAlert, Siren } from 'lucide-react'
+import { BadgeCheck, Check, ChevronDown, FlaskConical, Languages, RotateCcw, ShieldAlert, ShieldCheck, Siren } from 'lucide-react'
 import { toast } from 'sonner'
-import { PERSONAS } from '../../data/users'
+import { ADMIN_ID, PERSONAS } from '../../data/users'
 import { resetWithUndo } from '../../lib/demo'
 import { cn } from '../../lib/cn'
 import { useL, useLang, useT } from '../../lib/i18n'
+import { go } from '../../lib/router'
 import { usePersona, useStore } from '../../store/useStore'
 import { useUi } from '../../store/useUi'
 import { Avatar } from '../listing/SellerCard'
@@ -75,7 +76,8 @@ export function PersonaMenu({ compact }: { compact?: boolean }) {
           <span className="hidden min-w-0 flex-col items-start leading-tight xl:flex">
             <span className="max-w-[130px] truncate text-[13.5px]">{L(me.name).split(' ')[0]}</span>
             <span className="text-[11.5px] font-normal opacity-80">
-              <span dir="ltr">{me.major}</span> · {L(me.level)}
+              {me.role === 'admin' ? null : <span dir="ltr">{me.major} · </span>}
+              {L(me.level)}
             </span>
           </span>
         )}
@@ -86,8 +88,16 @@ export function PersonaMenu({ compact }: { compact?: boolean }) {
           <Menu.Popup className="pop w-[300px] max-w-[calc(100vw-24px)] rounded-card bg-white p-1.5 shadow-float outline-none">
             <Menu.Group>
               <Menu.GroupLabel className="px-3 pt-2 pb-1 text-[12.5px] font-semibold text-muted">{t('View the market as', 'شوف السوق بعين')}</Menu.GroupLabel>
-              <Menu.RadioGroup value={me.id} onValueChange={(v) => setPersona(v as string)}>
-                {PERSONAS.map((id) => {
+              <Menu.RadioGroup
+                value={me.id}
+                onValueChange={(v) => {
+                  setPersona(v as string)
+                  // The admin lands on the admin page; students never stay on it.
+                  if (v === ADMIN_ID) go('admin')
+                  else if (window.location.hash.startsWith('#/admin')) go('market')
+                }}
+              >
+                {[...PERSONAS, ADMIN_ID].map((id) => {
                   const u = users.find((x) => x.id === id)
                   if (!u) return null
                   return (
@@ -101,9 +111,9 @@ export function PersonaMenu({ compact }: { compact?: boolean }) {
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-1.5 text-[14.5px] font-semibold text-black">
                           <span className="truncate">{L(u.name)}</span>
-                          {u.verified ? <BadgeCheck className="size-4 shrink-0 text-green" aria-label={t('Verified', 'موثّق')} /> : null}
+                          {u.role === 'admin' ? <ShieldCheck className="size-4 shrink-0 text-turquoise" aria-hidden="true" /> : u.verified ? <BadgeCheck className="size-4 shrink-0 text-green" aria-label={t('Verified', 'موثّق')} /> : null}
                         </span>
-                        <MajorTag user={u} />
+                        {u.role === 'admin' ? <span className="text-[13px] text-muted">{t('Moderation and reports', 'الإشراف والبلاغات')}</span> : <MajorTag user={u} />}
                       </span>
                       <Menu.RadioItemIndicator>
                         <Check className="size-4 text-turquoise" aria-hidden="true" />
@@ -114,7 +124,7 @@ export function PersonaMenu({ compact }: { compact?: boolean }) {
               </Menu.RadioGroup>
             </Menu.Group>
             <div className="my-1.5 h-px bg-line" role="separator" />
-            {me.verified ? null : (
+            {me.verified || me.role === 'admin' ? null : (
               <Menu.Item onClick={() => setVerify(true)} className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-control px-3 text-[14px] font-medium outline-none data-[highlighted]:bg-wash-strong">
                 <ShieldAlert className="size-4 text-turquoise" aria-hidden="true" />
                 {t('Verify @kfupm.edu.sa email', 'وثّق إيميل الجامعة')}

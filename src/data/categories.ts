@@ -1,4 +1,4 @@
-import type { Bi, CategoryId, Condition, Kind, Payment, RateUnit, Urgency } from '../lib/types'
+import type { Bi, CategoryId, Condition, Kind, Payment, RateUnit, ReportReason, Urgency } from '../lib/types'
 
 export const CATEGORIES: { id: CategoryId; name: Bi; icon: string }[] = [
   { id: 'academic', name: { en: 'Academic and lab', ar: 'دراسة ومعامل' }, icon: 'Calculator' },
@@ -68,4 +68,13 @@ export const MAJOR_COLOR: Record<string, string> = {
   PETE: '#A31F34',
   ISE: '#004A81',
   PREP: '#3D3C7F',
+}
+
+export const REPORT_REASONS: Record<ReportReason, Bi> = {
+  scam: { en: 'Looks like a scam', ar: 'يبدو احتيال' },
+  prohibited: { en: 'Item not allowed on campus', ar: 'غرض ممنوع في الجامعة' },
+  wrongInfo: { en: 'Wrong price or description', ar: 'سعر أو وصف غير صحيح' },
+  noShow: { en: 'Did not show up to the meetup', ar: 'ما حضر موعد التسليم' },
+  abuse: { en: 'Rude or abusive messages', ar: 'رسائل مسيئة' },
+  other: { en: 'Something else', ar: 'شي ثاني' },
 }

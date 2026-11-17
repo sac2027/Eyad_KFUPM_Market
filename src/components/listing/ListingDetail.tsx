@@ -1,15 +1,16 @@
-import { MessageCircle, Repeat, Share2, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { CircleCheck, EyeOff, Flag, MessageCircle, Repeat, Share2, Trash2, UserRound } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { RATE_UNITS, categoryName } from '../../data/categories'
 import { zoneById } from '../../data/zones'
 import { ago, sar } from '../../lib/format'
 import { useListings, useNow } from '../../lib/hooks'
 import { useL, useLang, useT } from '../../lib/i18n'
-import { closeListing } from '../../lib/router'
+import { closeListing, go } from '../../lib/router'
 import type { Listing, RateUnit } from '../../lib/types'
 import { waLink } from '../../lib/whatsapp'
 import { usePersona, useStore, useUser } from '../../store/useStore'
+import { useUi } from '../../store/useUi'
 import { Art } from '../brand/Art'
 import { Badge } from '../ui/Badge'
 import { Button, buttonClass } from '../ui/Button'
@@ -30,21 +31,181 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Body({ listing }: { listing: Listing }) {
+/** Seller's quick controls: change the price or mark it sold elsewhere. */
+function OwnerTools({ listing }: { listing: Listing }) {
+  const t = useT()
+  const lang = useLang()
+  const updatePrice = useStore((s) => s.updatePrice)
+  const markSold = useStore((s) => s.markSold)
+  const removeListing = useStore((s) => s.removeListing)
+  const addListing = useStore((s) => s.addListing)
+  const [price, setPrice] = useState(String(listing.price))
+  const n = Number(price)
+  const valid = price.trim() !== '' && Number.isFinite(n) && n >= 0
+  const priced = listing.kind === 'sale' || listing.kind === 'bundle' || listing.kind === 'service'
+
+  return (
+    <div className="rounded-card bg-wash p-4">
+      <p className="font-semibold text-turquoise">{t('This is your listing.', 'هذا إعلانك.')}</p>
+      {listing.hidden ? (
+        <p className="mt-2 flex items-start gap-2 rounded-control bg-error/15 p-3 text-[14px] font-medium text-danger-ink">
+          <EyeOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          {t('A market admin hid this listing. Other students cannot see it. Fix what was reported or contact the admins.', 'مشرف السوق أخفى هذا الإعلان. الطلاب ما يشوفونه. صحّح المشكلة أو تواصل مع المشرفين.')}
+        </p>
+      ) : (
+        <p className="mt-1 text-[14px] text-muted">
+          {listing.status === 'available'
+            ? t('Students see it now. Reservations show up in your deals.', 'ظاهر للطلاب الحين. الحجوزات تطلع في صفقاتك.')
+            : listing.status === 'completed'
+              ? t('Marked as sold.', 'تم تحديده كمباع.')
+              : t('Manage the handover from your deals.', 'تابع التسليم من صفقاتك.')}
+        </p>
+      )}
+      {listing.status === 'available' ? (
+        <>
+          {priced ? (
+            <form
+              className="mt-3 flex items-end gap-2"
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (!valid || n === listing.price) return
+                updatePrice(listing.id, n)
+                toast.success(t(`Price changed to ${sar(n, lang)}`, `تغيّر السعر إلى ${sar(n, lang)}`))
+              }}
+            >
+              <label className="min-w-0 flex-1">
+                <span className="mb-1.5 block text-[13.5px] font-semibold text-turquoise">{t('Price, SAR', 'السعر بالريال')}</span>
+                <input className="field tabular" type="number" inputMode="numeric" min={0} value={price} onChange={(e) => setPrice(e.target.value)} aria-invalid={!valid} />
+              </label>
+              <Button type="submit" variant="secondary" disabled={!valid || n === listing.price}>
+                {t('Save price', 'احفظ السعر')}
+              </Button>
+            </form>
+          ) : null}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {listing.kind === 'service' || listing.kind === 'rent' ? null : (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="!min-h-11"
+                onClick={() => {
+                  markSold(listing.id)
+                  toast.success(t('Marked as sold', 'تم تحديده كمباع'))
+                }}
+              >
+                <CircleCheck className="size-4" aria-hidden="true" />
+                {listing.kind === 'free' ? t('Mark as given away', 'تم التبرع به') : t('Mark as sold', 'تم البيع')}
+              </Button>
+            )}
+            <Button
+              variant="danger"
+              size="sm"
+              className="!min-h-11"
+              onClick={() => {
+                removeListing(listing.id)
+                closeListing()
+                toast(t('Listing removed', 'تم حذف الإعلان'), { action: { label: t('Undo', 'تراجع'), onClick: () => addListing(listing) }, duration: 8000 })
+              }}
+            >
+              <Trash2 className="size-4" aria-hidden="true" />
+              {t('Remove listing', 'احذف الإعلان')}
+            </Button>
+          </div>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+/** Shown to the admin persona in place of the reserve form. */
+function AdminTools({ listing }: { listing: Listing }) {
+  const t = useT()
+  const setHidden = useStore((s) => s.setListingHidden)
+  const remove = useStore((s) => s.adminRemoveListing)
+  const openReports = useStore((s) => s.reports.filter((r) => r.status === 'open' && r.targetType === 'listing' && r.targetId === listing.id).length)
+  return (
+    <div className="rounded-card bg-wash p-4">
+      <p className="font-semibold text-turquoise">{t('Moderation', 'الإشراف')}</p>
+      <p className="mt-1 text-[14px] text-muted">
+        {listing.hidden
+          ? t('Hidden from students. The seller still sees it with a notice.', 'مخفي عن الطلاب. البائع يشوفه مع تنبيه.')
+          : openReports > 0
+            ? t(`${openReports} open ${openReports === 1 ? 'report' : 'reports'} on this listing.`, `${openReports} بلاغ مفتوح على هذا الإعلان.`)
+            : t('No open reports on this listing.', 'ما فيه بلاغات مفتوحة على هذا الإعلان.')}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="!min-h-11"
+          onClick={() => {
+            setHidden(listing.id, !listing.hidden)
+            toast.success(listing.hidden ? t('Listing restored', 'تمت إعادة الإعلان') : t('Listing hidden from students', 'تم إخفاء الإعلان عن الطلاب'))
+          }}
+        >
+          <EyeOff className="size-4" aria-hidden="true" />
+          {listing.hidden ? t('Restore listing', 'أعد الإعلان') : t('Hide listing', 'أخفِ الإعلان')}
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          className="!min-h-11"
+          onClick={() => {
+            if (!window.confirm(t('Remove this listing for good? Pending meetups for it are cancelled.', 'تحذف الإعلان نهائيًا؟ المواعيد المعلقة عليه تنلغي.'))) return
+            remove(listing.id)
+            closeListing()
+            toast(t('Listing removed', 'تم حذف الإعلان'))
+          }}
+        >
+          <Trash2 className="size-4" aria-hidden="true" />
+          {t('Remove listing', 'احذف الإعلان')}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="!min-h-11"
+          onClick={() => {
+            closeListing()
+            go('admin')
+          }}
+        >
+          {t('Open admin', 'افتح الإدارة')}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function Body({ listing, onFormVisible }: { listing: Listing; onFormVisible: (v: boolean) => void }) {
   const t = useT()
   const L = useL()
   const lang = useLang()
   const now = useNow(30_000)
   const me = usePersona()
   const seller = useUser(listing.sellerId)
-  const removeListing = useStore((s) => s.removeListing)
-  const addListing = useStore((s) => s.addListing)
+  const setProfile = useUi((s) => s.setProfile)
+  const setReportTarget = useUi((s) => s.setReportTarget)
+  const formRef = useRef<HTMLDivElement>(null)
   const myDeal = useStore((s) => s.deals.find((d) => d.listingId === listing.id && d.buyerId === s.personaId && (d.status === 'reserved' || d.status === 'rented')))
   const mine = listing.sellerId === me.id
   const isWorst = listing.id.startsWith('worst-')
   const desc = L(listing.desc)
   const zone = zoneById(listing.zone)
   const sum = bundleTotal(listing)
+  const isAdmin = me.role === 'admin'
+  const canAsk = Boolean(seller) && !mine && !isWorst && !isAdmin
+
+  // Tell the sheet when the reserve form is on screen, so the sticky bar can step aside.
+  useEffect(() => {
+    const el = formRef.current
+    if (!el) {
+      onFormVisible(true)
+      return
+    }
+    const io = new IntersectionObserver(([e]) => onFormVisible(e.isIntersecting), { threshold: 0.15 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [onFormVisible, listing.id, listing.status, myDeal?.id])
 
   return (
     <div className="flex flex-col gap-6 px-5 py-5 sm:px-6">
@@ -55,6 +216,7 @@ function Body({ listing }: { listing: Listing }) {
           <StatusBadge status={listing.status} />
           {listing.instant && listing.status === 'available' ? <InstantBadge /> : null}
           {listing.passItOn ? <Badge tone="beige">{t('Pass-It-On box', 'صندوق الخريجين')}</Badge> : null}
+          {listing.hidden ? <Badge tone="error">{t('Hidden by admin', 'مخفي من المشرف')}</Badge> : null}
         </div>
         <FavButton id={listing.id} className="absolute end-1 top-1" />
       </div>
@@ -73,7 +235,7 @@ function Body({ listing }: { listing: Listing }) {
         </div>
       </div>
 
-      {listing.kind !== 'groupbuy' ? <StatusSteps status={listing.status} rental={listing.kind === 'rent'} /> : null}
+      {listing.kind !== 'groupbuy' && (listing.status !== 'available' || mine) ? <StatusSteps status={listing.status} rental={listing.kind === 'rent'} /> : null}
 
       {L(listing.title).length > 90 ? <p className="text-[15px] font-semibold [overflow-wrap:anywhere]">{L(listing.title)}</p> : null}
 
@@ -164,40 +326,53 @@ function Body({ listing }: { listing: Listing }) {
 
       <SellerCard user={seller} role={listing.kind === 'groupbuy' ? t('Organizer', 'المنظّم') : listing.kind === 'rent' ? t('Owner', 'المالك') : listing.kind === 'service' ? t('Offered by', 'يقدّمها') : t('Seller', 'البائع')} />
 
-      {listing.kind === 'groupbuy' ? (
-        <GroupBuyPanel listing={listing} />
-      ) : mine ? (
-        <div className="rounded-card bg-wash p-4">
-          <p className="font-semibold text-turquoise">{t('This is your listing.', 'هذا إعلانك.')}</p>
-          <p className="mt-1 text-[14px] text-muted">
-            {listing.status === 'available'
-              ? t('Students see it now. Reservations show up in your deals.', 'ظاهر للطلاب الحين. الحجوزات تطلع في صفقاتك.')
-              : t('Manage the handover from your deals.', 'تابع التسليم من صفقاتك.')}
-          </p>
-          {listing.status === 'available' ? (
-            <Button
-              variant="danger"
-              size="sm"
-              className="mt-3"
-              onClick={() => {
-                removeListing(listing.id)
-                closeListing()
-                toast(t('Listing removed', 'تم حذف الإعلان'), { action: { label: t('Undo', 'تراجع'), onClick: () => addListing(listing) }, duration: 8000 })
-              }}
+      {seller && !isWorst ? (
+        <div className="-mt-3 flex flex-wrap gap-2">
+          {canAsk ? (
+            <a
+              href={waLink(
+                seller,
+                lang === 'ar'
+                  ? `السلام عليكم، شفت إعلانك في سوق البترول: ${L(listing.title)}\n${listing.photo ? 'عندي سؤال عنه.' : 'ممكن ترسل لي صور له؟'}`
+                  : `Salam, I saw your listing on KFUPM Market: ${L(listing.title)}\n${listing.photo ? 'I have a question about it.' : 'Could you send me a few photos of it?'}`,
+              )}
+              target="_blank"
+              rel="noreferrer"
+              className={buttonClass('whatsapp', 'sm', '!min-h-11')}
             >
-              <Trash2 className="size-4" aria-hidden="true" />
-              {t('Remove listing', 'احذف الإعلان')}
+              <MessageCircle className="size-4 text-green" aria-hidden="true" />
+              {listing.photo ? t('Ask a question', 'اسأل سؤال') : t('Ask for photos', 'اطلب صور')}
+            </a>
+          ) : null}
+          <Button variant="ghost" size="sm" className="!min-h-11" onClick={() => setProfile(seller.id)}>
+            <UserRound className="size-4" aria-hidden="true" />
+            {t('Profile and other listings', 'الملف وباقي إعلاناته')}
+          </Button>
+          {canAsk ? (
+            <Button variant="ghost" size="sm" className="!min-h-11" onClick={() => setReportTarget({ type: 'listing', id: listing.id })}>
+              <Flag className="size-4" aria-hidden="true" />
+              {t('Report', 'بلّغ')}
             </Button>
           ) : null}
         </div>
+      ) : null}
+
+      {isAdmin && !isWorst ? (
+        <AdminTools listing={listing} />
+      ) : listing.kind === 'groupbuy' ? (
+        <GroupBuyPanel listing={listing} />
+      ) : mine ? (
+        <OwnerTools key={listing.id} listing={listing} />
       ) : isWorst ? (
         <p className="rounded-card bg-wash p-4 text-[14px] text-muted">{t('Stress-test row. It cannot be reserved.', 'صف اختبار. ما ينحجز.')}</p>
       ) : myDeal ? (
         <ReservedSummary listing={listing} deal={myDeal} />
       ) : listing.status === 'available' ? (
-        <Section title={listing.kind === 'rent' ? t('Pick your rental window', 'اختر مدة الإيجار') : t('Request a meetup', 'اطلب موعد تسليم')}>
-          <ReservePanel key={listing.id} listing={listing} />
-        </Section>
+        <div ref={formRef} id="reserve-form" className="scroll-mt-4">
+          <Section title={listing.kind === 'rent' ? t('Pick your rental window', 'اختر مدة الإيجار') : t('Request a meetup', 'اطلب موعد تسليم')}>
+            <ReservePanel key={listing.id} listing={listing} />
+          </Section>
+        </div>
       ) : (
         <div className="rounded-card bg-wash p-4">
           <p className="font-semibold text-turquoise">
@@ -225,6 +400,11 @@ export function ListingDetail({ id }: { id: string | undefined }) {
   if (id && id !== last) setLast(id)
   const shownId = id ?? last
   const listing = shownId ? listings.find((l) => l.id === shownId) : undefined
+  const me = usePersona()
+  const hasDeal = useStore((s) => s.deals.some((d) => d.listingId === shownId && d.buyerId === s.personaId && (d.status === 'reserved' || d.status === 'rented')))
+  const [formVisible, setFormVisible] = useState(true)
+  const reservable =
+    listing != null && listing.status === 'available' && listing.kind !== 'groupbuy' && listing.sellerId !== me.id && me.role !== 'admin' && !hasDeal && !listing.id.startsWith('worst-')
 
   return (
     <Sheet
@@ -239,12 +419,18 @@ export function ListingDetail({ id }: { id: string | undefined }) {
           <button
             type="button"
             className={buttonClass('ghost', 'sm', '-mt-1 !min-h-11 !px-3')}
-            aria-label={t('Copy link', 'انسخ الرابط')}
+            aria-label={t('Share this listing', 'شارك الإعلان')}
             onClick={async () => {
               try {
+                // Phones get the native share sheet; desktops copy the link.
+                if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
+                  await navigator.share({ title: L(listing.title), url: window.location.href })
+                  return
+                }
                 await navigator.clipboard.writeText(window.location.href)
                 toast.success(t('Link copied', 'تم نسخ الرابط'))
-              } catch {
+              } catch (err) {
+                if (err instanceof DOMException && err.name === 'AbortError') return
                 toast.error(t('Copy the link from the address bar.', 'انسخ الرابط من شريط العنوان.'))
               }
             }}
@@ -253,9 +439,23 @@ export function ListingDetail({ id }: { id: string | undefined }) {
           </button>
         ) : null
       }
+      footer={
+        reservable && !formVisible ? (
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <Price listing={listing} />
+            </div>
+            <Button
+              onClick={() => document.getElementById('reserve-form')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })}
+            >
+              {listing.kind === 'rent' ? t('Choose rental dates', 'اختر مدة الإيجار') : listing.kind === 'free' ? t('Claim it', 'احجزه') : listing.kind === 'service' ? t('Book it', 'احجز موعد') : t('Request meetup', 'اطلب موعد')}
+            </Button>
+          </div>
+        ) : undefined
+      }
     >
       {listing ? (
-        <Body listing={listing} />
+        <Body listing={listing} onFormVisible={setFormVisible} />
       ) : (
         <div className="px-6 py-10">
           <p className="text-muted">{t('It may have been removed by the seller. Go back to the market to see what is listed now.', 'يمكن البائع حذفه. ارجع للسوق وشوف المعروض الحين.')}</p>

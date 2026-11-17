@@ -39,8 +39,10 @@ export function seedUsers(now: number): User[] {
     u('turki', 'Turki Al-Shehri', 'تركي الشهري', 'ME', 'Sophomore', 'سنة ثانية', 833, 108, { responseMins: 18, deals: 5, onTime: 3, rentals: 3, endorsements: 2 }),
     u('nawaf', 'Nawaf Al-Shammari', 'نواف الشمري', 'CHE', 'Graduating senior', 'خريج هذا الترم', 847, 109, { responseMins: 8, deals: 20, onTime: 12, rentals: 12, endorsements: 11 }, { graduating: true }),
     u('rayan', 'Rayan Bukhari', 'ريان بخاري', 'AE', 'Junior', 'سنة ثالثة', 829, 110, { responseMins: 11, deals: 12, onTime: 10, rentals: 10, endorsements: 8 }),
+    u('admin', 'Market Admin', 'مشرف السوق', 'ADMIN', 'Moderator', 'مشرف', 838, 199, { responseMins: 0, deals: 0, onTime: 0, rentals: 0, endorsements: 0 }, { role: 'admin' }),
     u('majed', 'Majed Al-Anazi', 'ماجد العنزي', 'ISE', 'Senior', 'سنة رابعة', 836, 111, { responseMins: 30, deals: 4, onTime: 2, rentals: 2, endorsements: 1 }),
   ]
 }
 
 export const PERSONAS = ['eyad', 'faisal', 'omar'] as const
+export const ADMIN_ID = 'admin'
